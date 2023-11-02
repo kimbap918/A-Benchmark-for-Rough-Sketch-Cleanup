@@ -1,217 +1,231 @@
-# A Benchmark for Rough Sketch Cleanup
+# 러프 스케치 정리를 위한 벤치마크
 
-This is the code repository associated with the paper <a href="https://cragl.cs.gmu.edu/sketchbench/">*A Benchmark for Rough Sketch Cleanup*</a> by Chuan Yan, David Vanderhaeghe, and Yotam Gingold from SIGGRAPH Asia 2020.
+이 코드 저장소는 SIGGRAPH Asia 2020에서 Chuan Yan, David Vanderhaeghe, 그리고 Yotam Gingold가 발표한 <a href="https://cragl.cs.gmu.edu/sketchbench/">*A Benchmark for Rough Sketch Cleanup*</a>논문과 관련된 코드 저장소입니다.
 
-This code computes the metrics described in the paper and generates the benchmark website
-to compare the output of various sketch cleanup algorithms.
+이 코드는 논문에서 설명한 메트릭을 계산하고, 다양한 스케치 정리 알고리즘의 출력물을 비교하기 위한 벤치마크 웹사이트를 생성합니다.
 
-## The Directory Structure
 
-Data directories are defined in the file `cfg.yaml`:
 
-* `dataset_dir`: User puts the dataset here. Needed by the website.
-* `alg_dir`: User puts automatic results here. Needed by the website.
-* `web_dir`: We generate the website here. Image paths look like `../{alg_dir}/rest/of/path.svg`
-* `table_dir`: We generate the metrics computed by the benchmark here. Needed to generate the website, but not needed when hosting the website. (A precomputed version for algorithms we tested is provided below.)
-* `test_dir`: We generate resized image files for testing algorithms here. Needed also when computing metrics. Not needed by the website. (A precomputed version is provided below.)
+## 디렉토리 구조
 
-The default values are
-```
-dataset_dir: './data/Benchmark_Dataset
+데이터 디렉토리는 `cfg.yaml` 파일에 정의되어 있습니다:
+
+- `dataset_dir`: 사용자가 이곳에 데이터셋을 넣습니다. 웹사이트에서 필요합니다.
+- `alg_dir`: 사용자가 여기에 자동 결과물을 넣습니다. 웹사이트에서 필요합니다.
+- `web_dir`: 웹사이트를 여기에 생성합니다. 이미지 경로는 `../{alg_dir}/rest/of/path.svg`와 같이 보입니다.
+- `table_dir`: 벤치마크에서 계산된 메트릭을 여기에 생성합니다. 웹사이트 생성에 필요하지만 웹사이트를 호스팅할 때는 필요하지 않습니다. (테스트한 알고리즘의 미리 계산된 버전이 아래에 제공됩니다.)
+- `test_dir`: 여기에 알고리즘 테스트용 리사이즈된 이미지 파일을 생성합니다. 메트릭을 계산할 때 필요하지만 웹사이트에서는 필요하지 않습니다. (미리 계산된 버전이 아래에 제공됩니다.)
+
+기본값은 다음과 같습니다.
+
+```python
+vbnetCopy code
+dataset_dir: './data/Benchmark_Dataset'
 alg_dir: './data/Automatic_Results'
 web_dir: './data/web'
 table_dir: './data/Evaluation_Data'
 test_dir: './data/Benchmark_Testset'
 ```
 
-If you are generating your own `test_dir` data, you need Inkscape and ImageMagick.
-`run_benchmark.py` tries to find them according to your OS.
-You can set the paths directly in `cfg.yaml` by changing `inkscape_path` and `magick_path` to point to Inkscape and ImageMagick's convert executable, respectively.
+`test_dir` 데이터를 직접 생성하는 경우, Inkscape와 ImageMagick이 필요합니다. `run_benchmark.py`는 사용자의 운영 체제에 따라 이들을 찾으려고 시도합니다. `inkscape_path`와 `magick_path`를 변경하여 `cfg.yaml`에서 직접 경로를 설정할 수 있습니다.
 
 
-## Installing Code Dependencies
 
-Clone or download this repository. The code is written in Python. It depends on the following modules: `aabbtree`, `CairoSVG`, `cssutils`, `matplotlib`, `numpy`, `opencv-python`, `pandas`, `Pillow`, `PyYAML`, `scipy`, `svglib`, `svgpathtools`, `tqdm`
+## 코드 종속성 설치
 
-You can install these modules with:
+이 저장소를 복제하거나 다운로드하세요. 이 코드는 Python으로 작성되었습니다. 
+
+다음 모듈에 의존합니다: `aabbtree`, `CairoSVG`, `cssutils`, `matplotlib`, `numpy`, `opencv-python`, `pandas`, `Pillow`, `PyYAML`, `scipy`, `svglib`, `svgpathtools`, `tqdm`
+
+다음 명령어를 사용하여 이러한 모듈을 설치할 수 있습니다:
+
 ```bash
 pip3 install -r requirements.txt
 ```
-or, for a more reproducible environment, use [Poetry](https://python-poetry.org/docs/#installation) (`brew install poetry` or `pip install poetry`):
+
+또는 더 재현 가능한 환경을 위해 [Poetry](https://python-poetry.org/docs/#installation) (`brew install poetry` 또는 `pip install poetry`)를 사용할 수 있습니다:
+
 ```bash
 poetry install --no-root
 poetry shell
 ```
-or Pipenv (`pip install pipenv`):
+
+또는 Pipenv (`pip install pipenv`):
+
 ```bash
 pipenv install
 pipenv shell
 ```
-The `shell` command turns on the virtual environment.
-It should be run once before running the scripts.
 
-If you are not downloading the precomputed test images, make sure the following external software has been installed in your system:
+`shell` 명령은 가상 환경을 활성화합니다. 스크립트를 실행하기 전에 한 번 실행해야 합니다.
 
-1. [Inkscape 1.x](https://inkscape.org/). Please install an up-to-date Inkscape. Versions prior to 1.0 have incompatible command line parameters. `brew cask install inkscape` or `apt-get install inkscape`.
-2. [ImageMagick](https://imagemagick.org/script/download.php). `brew install imagemagick` or `apt-get install imagemagick`.
+미리 계산된 테스트 이미지를 다운로드하지 않는 경우, 시스템에 다음 외부 소프트웨어가 설치되어 있는지 확인하십시오:
+
+1. [Inkscape 1.x](https://inkscape.org/). 최신 Inkscape를 설치하세요. 1.0 이전 버전은 호환되지 않는 명령줄 매개변수를 가지고 있습니다. `brew cask install inkscape` 또는 `apt-get install inkscape`로 설치할 수 있습니다.
+2. [ImageMagick](https://imagemagick.org/script/download.php). `brew install imagemagick` 또는 `apt-get install imagemagick`으로 설치할 수 있습니다.
 
 
-## The Dataset and Precomputed Output
 
-You can download the sketch dataset, precomputed algorithmic output, and computed metrics here: [`Benchmark_Dataset.zip` (900 MB)](https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip), [`Automatic_Results.zip` (440 MB)](https://cragl.cs.gmu.edu/sketchbench/Automatic_Results.zip), [`Evaluation_Data.zip` (20 MB)](https://cragl.cs.gmu.edu/sketchbench/Evaluation_Data.zip).
-Unzip them in `./data/` (unless you changed the paths in `cfg.yaml`):
+## 데이터셋 및 미리 계산된 출력
+
+스케치 데이터셋, 미리 계산된 알고리즘 출력 및 계산된 메트릭을 다음에서 다운로드할 수 있습니다: [`Benchmark_Dataset.zip` (900 MB)](https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip), [`Automatic_Results.zip` (440 MB)](https://cragl.cs.gmu.edu/sketchbench/Automatic_Results.zip), [`Evaluation_Data.zip` (20 MB)](https://cragl.cs.gmu.edu/sketchbench/Evaluation_Data.zip). `cfg.yaml`에서 경로를 변경하지 않은 경우 `./data/`에 압축을 풉니다:
+
 ```bash
 unzip Benchmark_Dataset.zip
 unzip Automatic_Results.zip
 unzip Evaluation_Data.zip
 ```
 
-Note that the vectorized data has been normalized to have uniform line width.
-It was too tedious for artists to match line widths with the underlying image, so we did not require them to do so and then normalized the data.
+벡터화된 데이터는 균일한 선 너비를 갖도록 정규화되었습니다. 작가들이 기존 이미지의 선 너비에 맞추는 것이 너무 귀찮아서 이를 요구하지 않았으며, 그 후 데이터를 정규화했습니다.
 
-## Running
 
-### Generating or Downloading the Testset
 
-(If you are trying to regenerate the website from the paper using the precomputed output and already computed metrics, you do not need the Testset. If you want to change anything except the website itself, you need it.)
+## 실행
 
-The Testset consists of files derived from the dataset: rasterized versions of vector images and downsized images.
-You can regenerate it (see below) or download [`Benchmark_Testset.zip` (780 MB)](https://cragl.cs.gmu.edu/sketchbench/Benchmark_Testset.zip) and extract it into `./data/` (unless you changed the paths in `cfg.yaml`):
+### 테스트셋 생성 또는 다운로드
+
+(이미 계산된 출력과 계산된 메트릭을 사용하여 논문에서 웹사이트를 다시 생성하려는 경우 테스트셋은 필요하지 않습니다. 웹사이트 자체를 제외한 모든 것을 변경하려는 경우 필요합니다.)
+
+테스트셋은 데이터셋에서 유도된 파일로 구성됩니다: 벡터 이미지의 비트맵화된 버전 및 축소된 이미지입니다. 다음을 실행하여 다시 생성하거나 [`Benchmark_Testset.zip` (780 MB)](https://cragl.cs.gmu.edu/sketchbench/Benchmark_Testset.zip)을 다운로드하고 `./data/`에 압축을 풉니다(경로를 `cfg.yaml`에서 변경하지 않은 경우):
+
 ```bash
 unzip Benchmark_Testset.zip
 ```
 
-You can regenerate the Testset (necessary if you change the dataset itself) by running the following commands:
+테스트셋을 다시 생성할 수 있습니다(데이터셋 자체를 변경하는 경우 필요):
+
 ```bash
-python3 run_benchmark.py --normalize   # generate normalized versions of SVGs
-python3 run_benchmark.py --generate-test # generate rasterized versions of Dataset, at different resolutions
+python3 run_benchmark.py --normalize   # SVG의 정규화된 버전 생성
+python3 run_benchmark.py --generate-test # 데이터셋의 비트맵 버전을 다양한 해상도로 생성
 ```
 
-This will scan `dataset_dir` and `test_dir`, generate missing
-normalized and rasterized images as needed.
-It takes approximately 20 to 30 minutes to generate the entire Testset.
+이렇게 하면 `dataset_dir` 및 `test_dir`를 스캔하여 필요한 정규화된 및 비트맵 이미지를 생성합니다.
 
-### Adding Algorithms to the Benchmark
+전체 테스트셋 생성에는 약 20~30분 정도 소요됩니다.
 
-Run your algorithm on all images in the Testset.
-If your algorithm takes raster input, run on all images in `./data/Benchmark_Testset/rough/pixel`.
-If your algorithm takes vector input, run on all images in `./data/Benchmark_Testset/rough/vector`.
-For each input, save the corresponding output image as a file with the same name
-in the directory: `./data/Automatic_Results/{name_of_your_method}{input_type}/{parameter}/`
 
-The algorithm folder name must contain two parts:
-`name_of_your_method` with an `input_type` suffix.
-The `input_type` suffix must be either `-png` or `-svg`.
-The parameter subdirectory can be any string;
-the string `none` is replaced with the empty string when generating the website.
-Folders beginning with a `.` are ignored.
-For examples, see the precomputed algorithmic output in `./Automatic_Results`.
-and evaluation result in `./Evaluation_Data` already.
 
-If your algorithm runs via `alg path/to/input.svg path/to/output.png`, here are two example commands to run your algorithm in batch on the entire benchmark. Via `find` and `parallel`
+### 벤치마크에 알고리즘 추가
+
+테스트셋의 모든 이미지에서 알고리즘을 실행합니다. 알고리즘이 래스터 입력을 사용하는 경우 `./data/Benchmark_Testset/rough/pixel`의 모든 이미지에서 실행합니다. 벡터 입력을 사용하는 경우 `./data/Benchmark_Testset/rough/vector`의 모든 이미지에서 실행합니다. 각 입력에 대해 해당 출력 이미지를 파일로 저장하고 디렉토리에 동일한 이름으로 저장합니다: `./data/Automatic_Results/{name_of_your_method}{input_type}/{parameter}/`
+
+알고리즘 폴더 이름은 두 부분으로 구성되어야 합니다: `name_of_your_method`에 `input_type` 접미사가 있어야 합니다. `input_type` 접미사는 `-png` 또는 `-svg` 중 하나여야 합니다. 
+
+매개변수 하위 디렉토리는 임의의 문자열이 될 수 있으며, 웹사이트를 생성할 때 `none` 문자열은 빈 문자열로 대체됩니다. 맨 앞에 `.`이 있는 폴더는 무시됩니다.
+
+`./Automatic_Results`에 미리 계산된 알고리즘 출력 및 `./Evaluation_Data`에 평가 결과가 있는 예제를 참조하세요.
+
+알고리즘이 `alg path/to/input.svg path/to/output.png`을 통해 실행되는 경우 전체 벤치마크에서 알고리즘을 배치로 실행하는 두 가지 예제 명령어는 다음과 같습니다.
+
+`find` 및 `parallel`을 사용한 방법:
+
 ```bash
 find ./data/Benchmark_Testset/rough/pixel -name '*.png' -print0 | parallel -0 alg '{}' './data/Automatic_Results/MyAlgorithm-png/none/{/.}.svg'
 ```
-Via `fd`:
+
+`fd`를 사용한 방법:
+
 ```bash
 fd ./data/Benchmark_Testset/rough/pixel -e png -x alg '{}' './data/Automatic_Results/MyAlgorithm-png/none/{/.}.svg'
 ```
 
-### Computing the Metrics
 
-Run the evaluation with the command:
+
+### 메트릭 계산
+
+다음 명령을 사용하여 평가를 실행합니다.
 
 ```bash
 python3 run_benchmark.py --evaluation
-```   
+```
 
-This command creates CSV files in `./data/Evaluation_Data`.
-It will not overwrite existing CSV files. If you downloaded the precomputed data, remove a file to regenerate it.
+이 명령은 `./data/Evaluation_Data`에 CSV 파일을 생성합니다. 기존 CSV 파일을 덮어쓰지 않습니다.
 
-### Generating the Website to View Evaluation Results
+미리 계산된 데이터를 다운로드했다면 파일을 제거하여 재생성해야 합니다.
 
-After you have called the evaluation step above to compute the metrics, generate the website with the command:
+
+
+### 평가 결과를 보기 위한 웹사이트 생성
+
+위의 평가 단계를 호출하여 메트릭을 계산한 후, 다음 명령을 사용하여 웹사이트를 생성합니다.
 
 ```bash
 python3 run_benchmark.py --website
 ```
 
-You must also generate thumbnails once with the command:
+또한 썸네일을 한 번 생성해야 합니다.
 
 ```bash
 python3 run_benchmark.py --thumbs
 ```
 
-Internally, the `--thumbs` command creates a shell that calls `find`, `convert`, and `parallel`.
+내부적으로 `--thumbs` 명령은 `find`, `convert`, 및 `parallel`을 호출하는 셸을 생성합니다.
 
-To view the website, open the `help.html` or `index.html` inside the `web_dir` manually or else call:
+웹사이트를 보려면 수동으로 `web_dir` 내의 `help.html` 또는 `index.html`을 열거나 다음 명령을 호출하십시오.
 
 ```bash
 python3 run_benchmark.py --show
 ```
 
-The website visualizes all algorithms' output and plots the metrics.
+웹사이트는 모든 알고리즘의 출력물을 시각화하고 메트릭을 플롯합니다.
 
-### Putting It All Together
 
-If you don't want to call each step separately, simply call:
+
+### 모두 함께 실행
+
+각 단계를 개별적으로 호출하지 않으려면 다음 명령만 실행하면 됩니다.
 
 ```bash
 python3 run_benchmark.py --all
 ```
 
-## Computing Metrics on a Single Sketch
 
-### Similarity Metrics
 
-To run the similarity metrics manually, use `tools/metric_multiple.py`. To get help, run:
+## 단일 스케치의 메트릭 계산
+
+### 유사성 메트릭
+
+유사성 메트릭을 수동으로 실행하려면 `tools/metric_multiple.py`를 사용합니다. 도움말을 보려면 다음 명령을 실행하십시오.
 
 ```bash
 python3 tools/metric_multiple.py --help
 ```
 
-To compare two files:
+두 파일을 비교하려면 다음을 실행하십시오.
 
 ```bash
 python3 tools/metric_multiple.py -gt "example/simple-single-dot.png" -i "example/simple-single-dot-horizontal1.png" -d 0 --f-measure --chamfer --hausdorff
 ```
 
-### Vector Metrics
 
-To evaluate junction quality:
+
+### 벡터 메트릭
+
+접선 품질을 평가하려면 다음을 실행하십시오.
 
 ```bash
 python3 tools/junction_quality.py --help
 ```
 
-To compute arc length statistics:
+호도르프 통계량을 계산하려면 다음을 실행하십시오.
 
 ```bash
 python3 tools/svg_arclengths_statistics.py --help
 ```
 
-### Rasterization
 
-If you need to convert a file from an SVG to a PNG, you can do it specifying the output filename:
+
+### 비트맵화
+
+SVG 파일을 PNG로 변환해야 하는 경우 출력 파일명을 지정하여 다음을 수행할 수 있습니다.
 
 ```bash
 inkscape my_file.svg --export-filename="output-WIDTH.png" --export-width=WIDTH --export-height=HEIGHT
 ```
-or specifying the output type (the input filename's extension is replaced):
+
+또는 출력 유형을 지정할 수 있습니다(입력 파일명의 확장자가 바뀝니다).
+
 ```bash
 inkscape my_file.svg --export-type=png --export-width=WIDTH --export-height=HEIGHT
 ```
 
-The shorthand versions of the above rasterization commands are:
-
-```bash
-inkscape -o output-WIDTH.png -w WIDTH -h HEIGHT my_file.svg
-```
-
-or
-
-```bash
-inkscape --export-type=png -w WIDTH -h HEIGHT my_file.svg
-```
-
-If you pass only one of width or height, the other is chosen automatically in a manner preserving the aspect ratio.
